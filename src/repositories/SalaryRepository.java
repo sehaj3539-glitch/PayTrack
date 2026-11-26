@@ -12,7 +12,7 @@ import java.util.List;
 import models.Salary;
 
 // SalaryRepository.java - Dedicated file persistence for Salary records
-public class SalaryRepository {
+public final class SalaryRepository {
 
     private static final String DATA_DIR = "data";
     private static final String SALARY_FILE = DATA_DIR + File.separator + "salary.txt";
@@ -60,13 +60,6 @@ public class SalaryRepository {
         return null;
     }
 
-    public synchronized void deleteByEmpId(int empId) {
-        boolean removed = salaryList.removeIf(s -> s.getEmpId() == empId);
-        if (removed) {
-            saveSalaryList();
-        }
-    }
-
     public synchronized void saveSalaryList() {
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(SALARY_FILE))) {
             for (Salary s : salaryList) {
@@ -83,7 +76,10 @@ public class SalaryRepository {
     public synchronized void loadSalaries() {
         salaryList.clear();
         File file = new File(SALARY_FILE);
-        if (!file.exists()) return;
+        if (!file.exists() || file.length() == 0) {
+            seedInitialSalaries();
+            return;
+        }
 
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
@@ -95,14 +91,19 @@ public class SalaryRepository {
                     int empId = Integer.parseInt(parts[1].trim());
                     double basic = Double.parseDouble(parts[2].trim());
                     int totalDays = Integer.parseInt(parts[3].trim());
-                    int presentDays = Integer.parseInt(parts[4].trim());
+                    int present = Integer.parseInt(parts[4].trim());
                     double daily = Double.parseDouble(parts[5].trim());
                     double finalSal = Double.parseDouble(parts[6].trim());
-                    salaryList.add(new Salary(salId, empId, basic, totalDays, presentDays, daily, finalSal));
+                    salaryList.add(new Salary(salId, empId, basic, totalDays, present, daily, finalSal));
                 }
             }
         } catch (Exception e) {
             System.err.println("[File Storage Error] Loading salaries: " + e.getMessage());
         }
+    }
+
+    private void seedInitialSalaries() {
+        save(new Salary(1, 45000.00, 30, 3));
+        save(new Salary(2, 38000.00, 30, 2));
     }
 }

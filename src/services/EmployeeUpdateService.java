@@ -7,19 +7,22 @@ import java.util.Scanner;
 import exceptions.EmployeeNotFoundException;
 import models.Department;
 import models.Employee;
-import repositories.DatabaseOperations;
+import repositories.DepartmentRepository;
+import repositories.EmployeeRepository;
 import utils.InputValidator;
 import validators.PhoneValidator;
 
 // EmployeeUpdateService.java - Dedicated service for updating existing employee records
 public class EmployeeUpdateService {
 
-    private final DatabaseOperations dbOps;
+    private final EmployeeRepository empRepo;
+    private final DepartmentRepository deptRepo;
     private final Map<Integer, Employee> employeeCache;
     private final EmployeeSearchService searchService;
 
-    public EmployeeUpdateService(DatabaseOperations dbOps, Map<Integer, Employee> employeeCache, EmployeeSearchService searchService) {
-        this.dbOps = dbOps;
+    public EmployeeUpdateService(EmployeeRepository empRepo, DepartmentRepository deptRepo, Map<Integer, Employee> employeeCache, EmployeeSearchService searchService) {
+        this.empRepo = empRepo;
+        this.deptRepo = deptRepo;
         this.employeeCache = employeeCache;
         this.searchService = searchService;
     }
@@ -55,7 +58,7 @@ public class EmployeeUpdateService {
             System.out.print("Do you want to change Department? (yes/no): ");
             String changeDept = scanner.nextLine().trim();
             if (changeDept.equalsIgnoreCase("yes") || changeDept.equalsIgnoreCase("y")) {
-                List<Department> depts = dbOps.getAllDepartments();
+                List<Department> depts = deptRepo.getAll();
                 System.out.println("Select New Department:");
                 for (int i = 0; i < depts.size(); i++) {
                     System.out.println((i + 1) + ". " + depts.get(i).getDeptName());
@@ -88,7 +91,7 @@ public class EmployeeUpdateService {
             String salaryStr = scanner.nextLine().trim();
             if (!salaryStr.isEmpty()) emp.setBasicSalary(Double.parseDouble(salaryStr));
 
-            boolean ok = dbOps.updateEmployee(emp);
+            boolean ok = empRepo.update(emp);
             if (ok) {
                 employeeCache.put(emp.getEmpId(), emp);
                 System.out.println("\n[Success] Employee ID " + empId + " updated successfully!");

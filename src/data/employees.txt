@@ -1,4 +1,0 @@
-1|Rahul Sharma|28|Male|Information Technology|9876543210|45000.0
-2|Priya Patel|26|Female|Human Resources|9876543211|38000.0
-3|Amit Verma|32|Male|Finance|9876543212|52000.0
-4|Sneha Rao|25|Female|Marketing|9876543213|35000.0

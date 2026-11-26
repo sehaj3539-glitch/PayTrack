@@ -1,6 +1,5 @@
 // Main.java - Main Application Entry Point with Console Menu
 import java.util.Scanner;
-import repositories.DatabaseOperations;
 import services.EmployeeManager;
 import services.PayrollManager;
 
@@ -8,9 +7,8 @@ public class Main {
 
     public static void main(String[] args) {
         // Initialize Core Components
-        DatabaseOperations dbOps = new DatabaseOperations();
-        EmployeeManager empManager = new EmployeeManager(dbOps);
-        PayrollManager payrollManager = new PayrollManager(dbOps, empManager);
+        EmployeeManager empManager = new EmployeeManager();
+        PayrollManager payrollManager = new PayrollManager(empManager);
 
         Scanner scanner = new Scanner(System.in);
         boolean running = true;

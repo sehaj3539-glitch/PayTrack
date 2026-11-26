@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 import models.Employee;
 
 // EmployeeRepository.java - Dedicated file persistence for Employee entities
-public class EmployeeRepository {
+public final class EmployeeRepository {
 
     private static final String DATA_DIR = "data";
     private static final String EMPLOYEES_FILE = DATA_DIR + File.separator + "employees.txt";
@@ -95,7 +95,10 @@ public class EmployeeRepository {
     public synchronized void loadEmployees() {
         employees.clear();
         File file = new File(EMPLOYEES_FILE);
-        if (!file.exists()) return;
+        if (!file.exists() || file.length() == 0) {
+            seedInitialEmployees();
+            return;
+        }
 
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
@@ -116,5 +119,12 @@ public class EmployeeRepository {
         } catch (Exception e) {
             System.err.println("[File Storage Error] Loading employees: " + e.getMessage());
         }
+    }
+
+    private void seedInitialEmployees() {
+        insert(new Employee("Rahul Sharma", 28, "Male", "Information Technology", "9876543210", 45000.00));
+        insert(new Employee("Priya Patel", 26, "Female", "Human Resources", "9876543211", 38000.00));
+        insert(new Employee("Amit Verma", 32, "Male", "Finance", "9876543212", 52000.00));
+        insert(new Employee("Sneha Rao", 25, "Female", "Marketing", "9876543213", 35000.00));
     }
 }

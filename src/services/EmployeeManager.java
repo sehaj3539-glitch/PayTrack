@@ -12,21 +12,22 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import exceptions.EmployeeNotFoundException;
+import models.Department;
 import models.Employee;
-import repositories.DatabaseOperations;
+import repositories.DepartmentRepository;
+import repositories.EmployeeRepository;
 
-// EmployeeManager.java - Coordinates Employee & Department management via specialized services
+// EmployeeManager.java - Coordinates Employee & Department management
 public class EmployeeManager {
 
-    private final DatabaseOperations dbOps;
+    private final EmployeeRepository empRepo;
+    private final DepartmentRepository deptRepo;
     private final Map<Integer, Employee> employeeCache;
 
     // Dedicated Sub-Services
     private final EmployeeCreationService creationService;
     private final EmployeeSearchService searchService;
     private final EmployeeUpdateService updateService;
-    private final EmployeeDeletionService deletionService;
-    private final DepartmentService departmentService;
 
     // 1D Array demonstrating One-Dimensional Array concept
     public static final String[] DEFAULT_DEPARTMENTS = {
@@ -40,16 +41,14 @@ public class EmployeeManager {
         {"Evening Shift", "02:00 PM - 10:00 PM"}
     };
 
-    public EmployeeManager(DatabaseOperations dbOps) {
-        this.dbOps = dbOps;
+    public EmployeeManager() {
+        this.empRepo = new EmployeeRepository();
+        this.deptRepo = new DepartmentRepository();
         this.employeeCache = new HashMap<>();
 
-        // Initialize modular sub-services
-        this.searchService = new EmployeeSearchService(dbOps, employeeCache);
-        this.creationService = new EmployeeCreationService(dbOps, employeeCache);
-        this.updateService = new EmployeeUpdateService(dbOps, employeeCache, searchService);
-        this.deletionService = new EmployeeDeletionService(dbOps, employeeCache, searchService);
-        this.departmentService = new DepartmentService(dbOps);
+        this.searchService = new EmployeeSearchService(empRepo, employeeCache);
+        this.creationService = new EmployeeCreationService(empRepo, deptRepo, employeeCache);
+        this.updateService = new EmployeeUpdateService(empRepo, deptRepo, employeeCache, searchService);
     }
 
     // 1. ADD EMPLOYEE
@@ -63,7 +62,7 @@ public class EmployeeManager {
         System.out.println("                                      ALL EMPLOYEES LIST                                          ");
         System.out.println("--------------------------------------------------------------------------------------------------");
 
-        List<Employee> list = dbOps.getAllEmployees();
+        List<Employee> list = empRepo.getAll();
 
         if (list.isEmpty()) {
             System.out.println("No employees found in the database.");
@@ -74,16 +73,14 @@ public class EmployeeManager {
                 "EMP ID", "NAME", "AGE", "GENDER", "DEPARTMENT", "PHONE", "BASIC SALARY");
         System.out.println("--------------------------------------------------------------------------------------------------");
 
-        // Iterator pattern demonstration
         Iterator<Employee> it = list.iterator();
         while (it.hasNext()) {
             Employee emp = it.next();
-            emp.displayInfo(); // Polymorphic method call
+            emp.displayInfo();
         }
         System.out.println("--------------------------------------------------------------------------------------------------");
         System.out.println("Total Employees: " + list.size());
 
-        // HashSet demonstration for unique departments
         Set<String> uniqueDepts = new HashSet<>();
         for (Employee e : list) {
             uniqueDepts.add(e.getDepartment());
@@ -107,28 +104,78 @@ public class EmployeeManager {
 
     // 5. DELETE EMPLOYEE
     public void deleteEmployee(Scanner scanner) {
-        deletionService.deleteEmployee(scanner);
+        System.out.print("\nEnter Employee ID to delete: ");
+        try {
+            int empId = Integer.parseInt(scanner.nextLine().trim());
+            Employee emp = searchService.searchEmployeeById(empId);
+
+            System.out.print("Are you sure you want to delete '" + emp.getName() + "' (ID: " + empId + ")? (yes/no): ");
+            String confirm = scanner.nextLine().trim();
+            if (confirm.equalsIgnoreCase("yes") || confirm.equalsIgnoreCase("y")) {
+                if (empRepo.delete(empId)) {
+                    employeeCache.remove(empId);
+                    System.out.println("\n[Success] Employee ID " + empId + " deleted successfully!");
+                } else {
+                    System.out.println("\n[Failed] Could not delete employee from database.");
+                }
+            } else {
+                System.out.println("Deletion cancelled by user.");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("[Input Error] Please enter a valid numeric Employee ID.");
+        } catch (EmployeeNotFoundException e) {
+            System.out.println("[Error] " + e.getMessage());
+        }
     }
 
     // 6. DEPARTMENT MANAGEMENT
     public void addDepartment(Scanner scanner) {
-        departmentService.addDepartment(scanner);
-    }
+        System.out.println("\n----------------------------------------------------");
+        System.out.println("                 ADD NEW DEPARTMENT                 ");
+        System.out.println("----------------------------------------------------");
+        System.out.print("Enter Department Name: ");
+        String deptName = scanner.nextLine().trim();
 
-    public void viewDepartments() {
-        departmentService.viewDepartments();
-    }
+        if (deptName.isEmpty()) {
+            System.out.println("[Warning] Department name cannot be empty.");
+            return;
+        }
 
-    // 7. DEMONSTRATION OF GENERICS, LAMBDA, AND STREAMS
-    public static <T> void printGenericList(List<T> list) {
-        int index = 1;
-        for (T item : list) {
-            System.out.println((index++) + ". " + item);
+        Department dept = new Department(deptName);
+        if (deptRepo.insert(dept)) {
+            System.out.println("[Success] Department '" + deptName + "' added successfully (ID: " + dept.getDeptId() + ").");
+        } else {
+            System.out.println("[Failed] Could not add department. It might already exist.");
         }
     }
 
+    public void viewDepartments() {
+        System.out.println("\n----------------------------------------------------");
+        System.out.println("                 DEPARTMENTS LIST                   ");
+        System.out.println("----------------------------------------------------");
+        List<Department> list = deptRepo.getAll();
+
+        if (list.isEmpty()) {
+            System.out.println("No departments recorded in database.");
+            return;
+        }
+
+        System.out.printf("| %-8s | %-35s |\n", "DEPT ID", "DEPARTMENT NAME");
+        System.out.println("----------------------------------------------------");
+        for (Department d : list) {
+            System.out.printf("| %-8d | %-35s |\n", d.getDeptId(), d.getDeptName());
+        }
+        System.out.println("----------------------------------------------------");
+
+        System.out.println("\nStandard Work Shifts (2D Array Demonstration):");
+        for (int i = 0; i < WORK_SHIFTS.length; i++) {
+            System.out.println(" - " + WORK_SHIFTS[i][0] + " : " + WORK_SHIFTS[i][1]);
+        }
+    }
+
+    // Streams and Lambda demonstration
     public void demonstrateStreamsAndLambda() {
-        List<Employee> list = dbOps.getAllEmployees();
+        List<Employee> list = empRepo.getAll();
         if (list.isEmpty()) return;
 
         System.out.println("\n[Streams Demo 1: Filter] Employees with Basic Salary > 40000:");
@@ -150,12 +197,5 @@ public class EmployeeManager {
         }
     }
 
-    // Sub-service accessors
-    public DatabaseOperations getDbOps() { return dbOps; }
-    public Map<Integer, Employee> getEmployeeCache() { return employeeCache; }
-    public EmployeeCreationService getCreationService() { return creationService; }
     public EmployeeSearchService getSearchService() { return searchService; }
-    public EmployeeUpdateService getUpdateService() { return updateService; }
-    public EmployeeDeletionService getDeletionService() { return deletionService; }
-    public DepartmentService getDepartmentService() { return departmentService; }
 }

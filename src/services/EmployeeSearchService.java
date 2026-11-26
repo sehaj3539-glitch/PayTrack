@@ -5,16 +5,16 @@ import java.util.Scanner;
 
 import exceptions.EmployeeNotFoundException;
 import models.Employee;
-import repositories.DatabaseOperations;
+import repositories.EmployeeRepository;
 
 // EmployeeSearchService.java - Dedicated service for employee lookups and in-memory cache
 public class EmployeeSearchService {
 
-    private final DatabaseOperations dbOps;
+    private final EmployeeRepository empRepo;
     private final Map<Integer, Employee> employeeCache;
 
-    public EmployeeSearchService(DatabaseOperations dbOps, Map<Integer, Employee> employeeCache) {
-        this.dbOps = dbOps;
+    public EmployeeSearchService(EmployeeRepository empRepo, Map<Integer, Employee> employeeCache) {
+        this.empRepo = empRepo;
         this.employeeCache = employeeCache;
     }
 
@@ -23,7 +23,7 @@ public class EmployeeSearchService {
             return employeeCache.get(empId);
         }
 
-        Employee emp = dbOps.getEmployeeById(empId);
+        Employee emp = empRepo.getById(empId);
         if (emp == null) {
             throw new EmployeeNotFoundException("Employee with ID " + empId + " was not found in the database!");
         }

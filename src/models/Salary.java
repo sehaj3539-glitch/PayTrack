@@ -63,7 +63,7 @@ public class Salary {
     // Basic Salary Calculation Formula:
     // Daily Salary = Monthly Basic Salary / Total Working Days
     // Final Salary = Daily Salary * Present Days
-    public void calculateSalary() {
+    public final void calculateSalary() {
         if (totalWorkingDays > 0) {
             this.dailySalary = this.basicSalary / this.totalWorkingDays;
             this.finalSalary = this.dailySalary * this.presentDays;

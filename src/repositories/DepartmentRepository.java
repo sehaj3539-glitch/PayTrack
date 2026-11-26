@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 import models.Department;
 
 // DepartmentRepository.java - Dedicated file persistence for Department entities
-public class DepartmentRepository {
+public final class DepartmentRepository {
 
     private static final String DATA_DIR = "data";
     private static final String DEPARTMENTS_FILE = DATA_DIR + File.separator + "departments.txt";
@@ -71,7 +71,10 @@ public class DepartmentRepository {
     public synchronized void loadDepartments() {
         departments.clear();
         File file = new File(DEPARTMENTS_FILE);
-        if (!file.exists()) return;
+        if (!file.exists() || file.length() == 0) {
+            seedInitialDepartments();
+            return;
+        }
 
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
@@ -87,5 +90,12 @@ public class DepartmentRepository {
         } catch (Exception e) {
             System.err.println("[File Storage Error] Loading departments: " + e.getMessage());
         }
+    }
+
+    private void seedInitialDepartments() {
+        insert(new Department("Information Technology"));
+        insert(new Department("Human Resources"));
+        insert(new Department("Finance"));
+        insert(new Department("Marketing"));
     }
 }

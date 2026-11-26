@@ -6,19 +6,20 @@ import exceptions.ArithmeticExceptionHandler;
 import exceptions.EmployeeNotFoundException;
 import models.Employee;
 import models.Salary;
-import repositories.DatabaseOperations;
+import repositories.AttendanceRepository;
+import repositories.SalaryRepository;
 
 // SalaryCalculationService.java - Dedicated service for salary calculations and multithreading demo
 public class SalaryCalculationService {
 
-    private final DatabaseOperations dbOps;
+    private final AttendanceRepository attRepo;
+    private final SalaryRepository salRepo;
     private final EmployeeSearchService searchService;
-    private final PayrollActivityLogger logger;
 
-    public SalaryCalculationService(DatabaseOperations dbOps, EmployeeSearchService searchService, PayrollActivityLogger logger) {
-        this.dbOps = dbOps;
+    public SalaryCalculationService(AttendanceRepository attRepo, SalaryRepository salRepo, EmployeeSearchService searchService) {
+        this.attRepo = attRepo;
+        this.salRepo = salRepo;
         this.searchService = searchService;
-        this.logger = logger;
     }
 
     public void calculateSalary(Scanner scanner) {
@@ -48,7 +49,7 @@ public class SalaryCalculationService {
                 }
             }
 
-            int loggedDays = dbOps.getPresentDaysCount(empId);
+            int loggedDays = attRepo.getPresentDaysCount(empId);
             System.out.println("Logged Present Days in Attendance Table: " + loggedDays + " Days");
 
             int presentDays = 0;
@@ -73,17 +74,14 @@ public class SalaryCalculationService {
 
             // Multithreading demonstration: background thread simulating calculation
             System.out.print("[Processing] Calculating salary");
-            Thread workerThread = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        for (int i = 0; i < 3; i++) {
-                            Thread.sleep(150);
-                            System.out.print(".");
-                        }
-                    } catch (InterruptedException e) {
-                        System.out.println("\nThread interrupted: " + e.getMessage());
+            Thread workerThread = new Thread(() -> {
+                try {
+                    for (int i = 0; i < 3; i++) {
+                        Thread.sleep(150);
+                        System.out.print(".");
                     }
+                } catch (InterruptedException e) {
+                    System.out.println("\nThread interrupted: " + e.getMessage());
                 }
             });
 
@@ -91,9 +89,8 @@ public class SalaryCalculationService {
             workerThread.join();
 
             Salary sal = new Salary(empId, emp.getBasicSalary(), totalWorkingDays, presentDays);
-            boolean ok = dbOps.saveSalary(sal);
+            boolean ok = salRepo.save(sal);
             if (ok) {
-                logger.log("Salary calculated for Emp ID: " + empId + " (Final: Rs. " + sal.getFinalSalary() + ")");
                 System.out.println("\n\n----------------------------------------------------");
                 System.out.println("             SALARY COMPUTATION RESULT              ");
                 System.out.println("----------------------------------------------------");

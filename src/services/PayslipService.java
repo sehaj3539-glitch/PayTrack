@@ -5,16 +5,16 @@ import java.util.Scanner;
 import exceptions.EmployeeNotFoundException;
 import models.Employee;
 import models.Salary;
-import repositories.DatabaseOperations;
+import repositories.SalaryRepository;
 
 // PayslipService.java - Dedicated service for payslip retrieval and console presentation
 public class PayslipService {
 
-    private final DatabaseOperations dbOps;
+    private final SalaryRepository salRepo;
     private final EmployeeSearchService searchService;
 
-    public PayslipService(DatabaseOperations dbOps, EmployeeSearchService searchService) {
-        this.dbOps = dbOps;
+    public PayslipService(SalaryRepository salRepo, EmployeeSearchService searchService) {
+        this.salRepo = salRepo;
         this.searchService = searchService;
     }
 
@@ -28,7 +28,7 @@ public class PayslipService {
             int empId = Integer.parseInt(scanner.nextLine().trim());
             Employee emp = searchService.searchEmployeeById(empId);
 
-            Salary sal = dbOps.getSalaryByEmpId(empId);
+            Salary sal = salRepo.getByEmpId(empId);
             if (sal == null) {
                 System.out.println("[Warning] Salary has not been calculated for this employee yet!");
                 System.out.println("Please run Option 9 (Calculate Salary) first.");

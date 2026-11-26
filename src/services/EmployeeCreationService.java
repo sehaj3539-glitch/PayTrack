@@ -6,18 +6,21 @@ import java.util.Scanner;
 
 import models.Department;
 import models.Employee;
-import repositories.DatabaseOperations;
+import repositories.DepartmentRepository;
+import repositories.EmployeeRepository;
 import utils.InputValidator;
 import validators.PhoneValidator;
 
 // EmployeeCreationService.java - Dedicated service for gathering input and registering employees
 public class EmployeeCreationService {
 
-    private final DatabaseOperations dbOps;
+    private final EmployeeRepository empRepo;
+    private final DepartmentRepository deptRepo;
     private final Map<Integer, Employee> employeeCache;
 
-    public EmployeeCreationService(DatabaseOperations dbOps, Map<Integer, Employee> employeeCache) {
-        this.dbOps = dbOps;
+    public EmployeeCreationService(EmployeeRepository empRepo, DepartmentRepository deptRepo, Map<Integer, Employee> employeeCache) {
+        this.empRepo = empRepo;
+        this.deptRepo = deptRepo;
         this.employeeCache = employeeCache;
     }
 
@@ -55,12 +58,12 @@ public class EmployeeCreationService {
                 }
             }
 
-            List<Department> depts = dbOps.getAllDepartments();
+            List<Department> depts = deptRepo.getAll();
             if (depts.isEmpty()) {
                 for (String dName : EmployeeManager.DEFAULT_DEPARTMENTS) {
-                    dbOps.insertDepartment(new Department(dName));
+                    deptRepo.insert(new Department(dName));
                 }
-                depts = dbOps.getAllDepartments();
+                depts = deptRepo.getAll();
             }
 
             System.out.println("\nSelect Department:");
@@ -105,7 +108,7 @@ public class EmployeeCreationService {
             }
 
             Employee emp = new Employee(name, age, gender, department, phone, basicSalary);
-            int generatedId = dbOps.insertEmployee(emp);
+            int generatedId = empRepo.insert(emp);
             if (generatedId > 0) {
                 employeeCache.put(generatedId, emp);
                 System.out.println("\n[Success] Employee added successfully! Automatically Assigned ID: " + generatedId);

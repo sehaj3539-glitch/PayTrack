@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 import models.Attendance;
 
 // AttendanceRepository.java - Dedicated file persistence for Attendance entities
-public class AttendanceRepository {
+public final class AttendanceRepository {
 
     private static final String DATA_DIR = "data";
     private static final String ATTENDANCE_FILE = DATA_DIR + File.separator + "attendance.txt";
@@ -62,13 +62,6 @@ public class AttendanceRepository {
         return count;
     }
 
-    public synchronized void deleteByEmpId(int empId) {
-        boolean removed = attendanceList.removeIf(a -> a.getEmpId() == empId);
-        if (removed) {
-            saveAttendance();
-        }
-    }
-
     public synchronized void saveAttendance() {
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(ATTENDANCE_FILE))) {
             for (Attendance a : attendanceList) {
@@ -83,7 +76,10 @@ public class AttendanceRepository {
     public synchronized void loadAttendance() {
         attendanceList.clear();
         File file = new File(ATTENDANCE_FILE);
-        if (!file.exists()) return;
+        if (!file.exists() || file.length() == 0) {
+            seedInitialAttendance();
+            return;
+        }
 
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
@@ -101,5 +97,15 @@ public class AttendanceRepository {
         } catch (Exception e) {
             System.err.println("[File Storage Error] Loading attendance: " + e.getMessage());
         }
+    }
+
+    private void seedInitialAttendance() {
+        mark(new Attendance(1, "2026-11-01", "Present"));
+        mark(new Attendance(1, "2026-11-02", "Present"));
+        mark(new Attendance(1, "2026-11-03", "Absent"));
+        mark(new Attendance(1, "2026-11-04", "Present"));
+        mark(new Attendance(2, "2026-11-01", "Present"));
+        mark(new Attendance(2, "2026-11-02", "Present"));
+        mark(new Attendance(3, "2026-11-01", "Present"));
     }
 }
